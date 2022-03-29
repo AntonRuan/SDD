@@ -1,0 +1,6 @@
+{
+    "port": "/dev/tty.usbserial-3",
+    "board": "esp8266:esp8266:nodemcuv2",
+    "sketch": "SDD.ino",
+    "output": "./build"
+}
