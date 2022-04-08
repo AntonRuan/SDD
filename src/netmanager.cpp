@@ -104,7 +104,7 @@ int wifi_connect() {
 
   WiFi.mode(WIFI_STA);
   wifiMulti.addAP(wificonf.stassid, wificonf.stapsw);
-
+  wifiMulti.addAP("xx", "xx");
   wifiMulti.addAP("OpenWrt", "12345678");
 
   while (wifiMulti.run() != WL_CONNECTED)
@@ -140,6 +140,17 @@ int wifi_connect() {
   return 0;
 }
 
+void wifi_loop()
+{
+  if (wifiMulti.run() == WL_CONNECTED) {
+    Serial.print("WiFi connected: ");
+    Serial.print(WiFi.SSID());
+    Serial.print(" ");
+    Serial.println(WiFi.localIP());
+  } else {
+    Serial.println("WiFi not connected!");
+  }
+}
 
 /*-------- NTP code ----------*/
 const int NTP_PACKET_SIZE = 48; // NTP时间在消息的前48字节中

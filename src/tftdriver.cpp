@@ -2,11 +2,13 @@
 #include <TFT_eSPI.h>
 #include <TJpg_Decoder.h>
 #include <ArduinoJson.h>
+#include <DigitalRainAnim.h>
 
 #include "tftdriver.h"
 #include "weathernum.h"
 #include "number.h"
 #include "Animate.h"
+#include "weather.h"
 
 #include "../img/temperature.h"
 #include "../img/humidity.h"
@@ -25,6 +27,27 @@ byte loadNum = 6;
 
 Number      dig;
 WeatherNum wrat;
+
+unsigned char Hour_sign   = 60;
+unsigned char Minute_sign = 60;
+unsigned char Second_sign = 60;
+
+DigitalRainAnim digitalRainAnim = DigitalRainAnim();
+int screen_index = 0;
+
+void switch_screen(int index)
+{
+  screen_index = index;
+  if (screen_index == 1)
+    digitalRainAnim.init(&tft);
+  else {
+    Hour_sign   = 60;
+    Minute_sign = 60;
+    Second_sign = 60;
+    getCityCode();
+  }
+}
+
 
 void Web_win()
 {
@@ -93,11 +116,14 @@ void display_temp(String str)
 {
   clk.setColorDepth(8);
   clk.loadFont(ZdyLwFont_20);
-  clk.createSprite(88, 24);
+  clk.createSprite(140, 24);
   clk.fillSprite(bgColor);
   clk.setTextDatum(CC_DATUM);
-  clk.setTextColor(TFT_WHITE, bgColor);
-  clk.drawString("Temp: " + str + "℃", 28, 13);
+  if (str.toInt() > 50)
+    clk.setTextColor(TFT_RED, bgColor);
+  else
+    clk.setTextColor(TFT_WHITE, bgColor);
+  clk.drawString("温度: " + str + "℃", 58, 13);
   clk.pushSprite(15, 190);
   clk.deleteSprite();
   clk.unloadFont();
@@ -107,11 +133,28 @@ void display_cpu(String str)
 {
   clk.setColorDepth(8);
   clk.loadFont(ZdyLwFont_20);
-  clk.createSprite(88, 24);
+  clk.createSprite(120, 24);
+  clk.fillSprite(bgColor);
+  clk.setTextDatum(CC_DATUM);
+  if (str.toInt() > 50)
+    clk.setTextColor(TFT_RED, bgColor);
+  else
+    clk.setTextColor(TFT_WHITE, bgColor);
+  clk.drawString("CPU: " + str, 48, 13);
+  clk.pushSprite(15, 220);
+  clk.deleteSprite();
+  clk.unloadFont();
+}
+
+void display_debug(String str)
+{
+  clk.setColorDepth(8);
+  clk.loadFont(ZdyLwFont_20);
+  clk.createSprite(120, 24);
   clk.fillSprite(bgColor);
   clk.setTextDatum(CC_DATUM);
   clk.setTextColor(TFT_WHITE, bgColor);
-  clk.drawString("CPU: " + str, 28, 13);
+  clk.drawString(str, 48, 13);
   clk.pushSprite(15, 220);
   clk.deleteSprite();
   clk.unloadFont();
@@ -134,9 +177,6 @@ String monthDay()
 
 void digitalClockDisplay()
 {
-  static unsigned char Hour_sign   = 60;
-  static unsigned char Minute_sign = 60;
-  static unsigned char Second_sign = 60;
   int timey = 82;
 
   if (hour() != Hour_sign)//时钟刷新
@@ -270,11 +310,15 @@ const uint8_t *Animate_value; //指向关键帧的指针
 uint32_t Animate_size;        //指向关键帧大小的指针
 void refresh_AnimatedImage()
 {
-  if (millis() - Amimate_reflash_Time > 100) // x ms切换一次
+  if (screen_index == 0)
   {
     Amimate_reflash_Time = millis();
     imgAnim(&Animate_value, &Animate_size);
     TJpgDec.drawJpg(160, 160, Animate_value, Animate_size);
+  }
+  else if (screen_index == 1)
+  {
+    digitalRainAnim.loop();
   }
 }
 
@@ -283,6 +327,12 @@ bool tft_output(int16_t x, int16_t y, uint16_t w, uint16_t h, uint16_t* bitmap)
   if (y >= tft.height()) return 0;
   tft.pushImage(x, y, w, h, bitmap);
   return 1;
+}
+
+void set_tft_bright(int v)
+{
+  LCD_BL_PWM = v;
+  analogWrite(LCD_BL_PIN, 1023 - (LCD_BL_PWM * 10));
 }
 
 void tft_init()
@@ -309,10 +359,8 @@ void jpg_init()
 
 void time_loop()
 {
-  static time_t prevDisplay = 0;
-  if (now() != prevDisplay)
+  if (screen_index == 0)
   {
-    prevDisplay = now();
     digitalClockDisplay();
   }
 }

@@ -3,5 +3,6 @@
 
 int wifi_connect();
 time_t getNtpTime();
+void wifi_loop();
 
 #endif
