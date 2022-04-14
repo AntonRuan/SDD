@@ -27,6 +27,7 @@ Thread reflash_Animate = Thread();
 StaticThreadController<4> controller(&reflash_time, &reflash_Banner, &reflash_openWifi, &reflash_Animate);
 
 void reflashTime();
+void refresh_AnimatedImage();
 
 void setup() {
   // put your setup code here, to run once:
@@ -40,36 +41,32 @@ void setup() {
   httpServer.begin();
 
   getCityCode();
-  //getCityWeater();
 
-  // 设置MQTT服务器和端口号
-  mqttClient.setServer(mqttServer, port);
-  // 收到信息后的回调函数
-  mqttClient.setCallback(receiveCallback);
-  // 连接MQTT服务器
-  connectMQTTServer();
+  mqtt_init();
 
   reflash_time.setInterval(300);
   reflash_time.onRun(reflashTime);
-  reflash_Animate.setInterval(10); //设置帧率
+  reflash_Animate.setInterval(100);
   reflash_Animate.onRun(refresh_AnimatedImage);
   controller.run();
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  httpServer.handleClient();
   if (controller.shouldRun())
     controller.run();
 
-  if (mqttClient.connected())
-    mqttClient.loop();
+  mqtt_loop();
+  httpServer.handleClient();
 }
 
 void reflashTime() {
   time_loop();
   wifi_loop();
-  if (!mqttClient.connected()) {
-    connectMQTTServer();
-  }
+  mqtt_connect_loop();
+  weater_loop();
+}
+
+void refresh_AnimatedImage() {
+  int speed = anim_loop();
+  reflash_Animate.setInterval(speed);
 }

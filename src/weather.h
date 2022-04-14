@@ -3,5 +3,6 @@
 
 void getCityCode();
 void getCityWeater();
+void weater_loop();
 
 #endif

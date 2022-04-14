@@ -34,6 +34,7 @@ unsigned char Second_sign = 60;
 
 DigitalRainAnim digitalRainAnim = DigitalRainAnim();
 int screen_index = 0;
+int screen_speed = 10;
 
 void switch_screen(int index)
 {
@@ -119,10 +120,11 @@ void display_temp(String str)
   clk.createSprite(140, 24);
   clk.fillSprite(bgColor);
   clk.setTextDatum(CC_DATUM);
-  if (str.toInt() > 50)
+  if (str.toInt() > 55)
     clk.setTextColor(TFT_RED, bgColor);
   else
     clk.setTextColor(TFT_WHITE, bgColor);
+  screen_speed = 100 - str.toInt();
   clk.drawString("温度: " + str + "℃", 58, 13);
   clk.pushSprite(15, 190);
   clk.deleteSprite();
@@ -136,7 +138,7 @@ void display_cpu(String str)
   clk.createSprite(120, 24);
   clk.fillSprite(bgColor);
   clk.setTextDatum(CC_DATUM);
-  if (str.toInt() > 50)
+  if (str.toInt() > 5)
     clk.setTextColor(TFT_RED, bgColor);
   else
     clk.setTextColor(TFT_WHITE, bgColor);
@@ -305,14 +307,12 @@ void weaterData(String *cityDZ, String *dataSK, String *dataFC)
   clk.unloadFont();
 }
 
-int Amimate_reflash_Time = 0; //更新时间记录
-const uint8_t *Animate_value; //指向关键帧的指针
-uint32_t Animate_size;        //指向关键帧大小的指针
-void refresh_AnimatedImage()
-{
+
+int anim_loop() {
   if (screen_index == 0)
   {
-    Amimate_reflash_Time = millis();
+    static const uint8_t *Animate_value; //指向关键帧的指针
+    static uint32_t Animate_size;        //指向关键帧大小的指针
     imgAnim(&Animate_value, &Animate_size);
     TJpgDec.drawJpg(160, 160, Animate_value, Animate_size);
   }
@@ -320,6 +320,7 @@ void refresh_AnimatedImage()
   {
     digitalRainAnim.loop();
   }
+  return screen_speed;
 }
 
 bool tft_output(int16_t x, int16_t y, uint16_t w, uint16_t h, uint16_t* bitmap)

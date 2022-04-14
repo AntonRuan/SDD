@@ -108,3 +108,12 @@ void getCityWeater()
   //关闭ESP8266与服务器连接
   httpClient.end();
 }
+
+void weater_loop()
+{
+  static unsigned long weaterTime = 0;
+  if(millis() - weaterTime > 300000){ //5分钟更新一次天气
+    weaterTime = millis();
+    getCityWeater();
+  }
+}

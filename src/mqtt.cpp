@@ -4,6 +4,7 @@
 
 #include <WiFiManager.h>
 #include <PubSubClient.h>
+#include <ArduinoJson.h>
 
 
 
@@ -17,26 +18,21 @@ String publishTopicName = "topicsend" ;
 String subscribeTopicName = "home/nodes/sensor/rpi-nas/monitor" ;
 String subscribeTopicName1 = "esp8266/control" ;
 
-// 连接MQTT服务器
-void connectMQTTServer(){
-    // 根据ESP8266的MAC地址生成客户端ID（避免与其它ESP8266的客户端ID重名）
-    String clientId = "esp8266-" + WiFi.macAddress();
+void receiveCallback(char* topic, byte* payload, unsigned int length);
 
-    if (mqttClient.connect(clientId.c_str())) {
-      display_debug("MQ Connected.");
-      Serial.println("MQTT Server Connected.");
-      Serial.print("Server Address:");
-      Serial.println(mqttServer);
-      Serial.print("ClientId:");
-      Serial.println(clientId);
-      mqttClient.setBufferSize(1024);
-      subscribeTopic(); // ****订阅指定主题****
-    } else {
-      Serial.print("MQTT Server Connect Failed. Client State:");
-      display_debug("MQ Failed.");
-      Serial.println(mqttClient.state());
-      delay(3000);
-    }
+void mqtt_init() {
+  // 设置MQTT服务器和端口号
+  mqttClient.setServer(mqttServer, port);
+  // 收到信息后的回调函数
+  mqttClient.setCallback(receiveCallback);
+}
+
+void mqtt_loop() {
+  mqttClient.loop();
+}
+
+void mqtt_connect_loop() {
+  connectMQTTServer();
 }
 
 // 发布信息
@@ -74,6 +70,31 @@ void subscribeTopic(){
       Serial.println(subTopic);
     } else {
       Serial.print("Subscribe Fail...");
+    }
+}
+
+// 连接MQTT服务器
+void connectMQTTServer(){
+    if (mqttClient.connected())
+      return;
+
+    // 根据ESP8266的MAC地址生成客户端ID（避免与其它ESP8266的客户端ID重名）
+    String clientId = "esp8266-" + WiFi.macAddress();
+
+    if (mqttClient.connect(clientId.c_str())) {
+      display_debug("MQ Connected.");
+      Serial.println("MQTT Server Connected.");
+      Serial.print("Server Address:");
+      Serial.println(mqttServer);
+      Serial.print("ClientId:");
+      Serial.println(clientId);
+      mqttClient.setBufferSize(1024);
+      subscribeTopic(); // ****订阅指定主题****
+    } else {
+      Serial.print("MQTT Server Connect Failed. Client State:");
+      display_debug("MQ Failed.");
+      Serial.println(mqttClient.state());
+      delay(3000);
     }
 }
 
